@@ -48,7 +48,7 @@ const consultingServices = [
   },
   {
     icon: Plane,
-    title: "Koreaga jo'nash",
+    title: "Koreaga jo'natish",
     description: "Viza olish, aviabilet va boshqa safar hujjatlarini tayyorlashda yordam beramiz."
   },
   {
@@ -61,7 +61,7 @@ const consultingServices = [
 const teachingServices = [
   {
     icon: BookOpen,
-    title: "Boshlang'ich kursi",
+    title: "Boshlang'ich kurslar",
     description: "Koreys tilini noldan o'rganish uchun maxsus ishlab chiqilgan kurs."
   },
   {

@@ -1,205 +1,140 @@
-import React, { useState } from 'react';
-import { Clock, Pin, X } from 'lucide-react';
+import React, { useState, useEffect, useMemo } from 'react';
+import { Bell, ChevronRight, Clock, Pin, X } from 'lucide-react';
+import axios from 'axios';
 import { Link } from 'react-router-dom';
 
-// Sample notices (later we'll fetch from an API/backend)
-const initialNotices = [
-  {
-    id: 1,
-    title: "Yangi TOPIK kursi boshlanmoqda!",
-    content: "25-iyundan boshlab yangi TOPIK kursi ochiladi. Joylar cheklangan! Ro'yxatdan o'tish uchun shoshiling.",
-    date: "2025-06-17",
-    isPinned: true,
-    type: "course",
-    link: "/courses"
-  },
-  {
-    id: 2,
-    title: "O'quvchimiz katta yutuqqa erishdi!",
-    content: "Nilufar Rahimova TOPIK imtihonidan 178 ball to'plab, Level 5 darajasini qo'lga kiritdi!",
-    date: "2025-06-16",
-    isPinned: true,
-    type: "update",
-    link: "/#success"
-  },
-  {
-    id: 3,
-    title: "Yozgi chegirmalar boshlandi",
-    content: "Barcha kurslarga 30% chegirma. Faqat iyun oyi davomida! Batafsil ma'lumot blog sahifamizda.",
-    date: "2025-06-15",
-    isPinned: false,
-    type: "promotion",
-    link: "/blog"
-  },
-  {
-    id: 4,
-    title: "Online guruh darslari",
-    content: "Zoom orqali guruh darslari boshlanmoqda. Qulay vaqt va hamyonbop narxlar.",
-    date: "2025-06-14",
-    isPinned: false,
-    type: "event",
-    link: "/courses"
-  },
-  {
-    id: 5,
-    title: "Seoul Universiteti granti!",
-    content: "O'quvchimiz Jamshid Toshmatov Seoul Milliy Universitetidan to'liq grant yutib oldi!",
-    date: "2025-06-13",
-    isPinned: false,
-    type: "update",
-    link: "/#success"
-  }
-];
-
-
-const NoticeItem = ({ notice, onClose }) => {
-  const typeColors = {
-    course: "bg-blue-500/10 text-blue-500 border-blue-500/20 hover:bg-blue-500/20",
-    update: "bg-green-500/10 text-green-500 border-green-500/20 hover:bg-green-500/20",
-    promotion: "bg-purple-500/10 text-purple-500 border-purple-500/20 hover:bg-purple-500/20",
-    event: "bg-yellow-500/10 text-yellow-500 border-yellow-500/20 hover:bg-yellow-500/20",
-    blog: "bg-pink-500/10 text-pink-500 border-pink-500/20 hover:bg-pink-500/20",
-    default: "bg-gray-500/10 text-gray-500 border-gray-500/20 hover:bg-gray-500/20"
-  };
-
-  const typeIcons = {
-    course: "🎓",
-    update: "🔄",
-    promotion: "🎉",
-    event: "📅",
-    blog: "📝",
-    default: "📢"
-  };
-
-  const colorClass = typeColors[notice.type] || typeColors.default;
-  const icon = typeIcons[notice.type] || typeIcons.default;
-
-  return (
-    <Link 
-      to={notice.link} 
-      className={`group block relative p-4 rounded-lg border ${colorClass} animate-fadeIn transition-all duration-300 hover:scale-[1.01] hover:shadow-lg`}
-    >
-      <div className="flex items-start justify-between gap-4">
-        <div className="flex items-start gap-3">
-          <div className="mt-1 text-xl group-hover:scale-110 transition-transform">
-            {icon}
-          </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <h3 className="font-semibold group-hover:text-current transition-colors">
-                {notice.title}
-                {notice.isPinned && (
-                  <Pin size={14} className="inline-block ml-2 transform -rotate-45" />
-                )}
-              </h3>
-            </div>
-            <p className="text-sm mt-1 text-gray-300 group-hover:text-current/80 transition-colors">
-              {notice.content}
-            </p>
-            <div className="flex items-center gap-2 mt-2 text-xs text-gray-400">
-              <Clock size={12} />
-              {new Date(notice.date).toLocaleDateString('uz-UZ')}
-            </div>
-          </div>
-        </div>
-        <button 
-          onClick={(e) => {
-            e.preventDefault(); 
-            onClose(notice.id);
-          }}
-          className="text-gray-400 hover:text-gray-200 transition-colors absolute top-4 right-4 opacity-0 group-hover:opacity-100"
-          aria-label="Close notice"
-        >
-          <X size={16} />
-        </button>
-      </div>
-    </Link>
-  );
-};
-
-export default function NoticeBoard() {
-  const [notices, setNotices] = useState(initialNotices);
-  const [closedNotices, setClosedNotices] = useState(new Set());
+const NoticeBoard = () => {
+  const [notifications, setNotifications] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [closedNotices, setClosedNotices] = useState(() => {
+    const saved = localStorage.getItem('closedNotices');
+    return new Set(saved ? JSON.parse(saved) : []);
+  });
   const [selectedType, setSelectedType] = useState('all');
+
+  useEffect(() => {
+    fetchNotifications();
+  }, []);
+
+  // Save closed notices to localStorage whenever they change
+  useEffect(() => {
+    localStorage.setItem('closedNotices', JSON.stringify([...closedNotices]));
+  }, [closedNotices]);
+
+  const fetchNotifications = async () => {
+    try {
+      const response = await axios.get('http://localhost:5000/api/blogs/notifications', {
+        withCredentials: true
+      });
+      const data = response.data || [];
+      setNotifications(Array.isArray(data) ? data : []);
+    } catch (err) {
+      console.error('Failed to fetch notifications:', err);
+      setNotifications([]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleCloseNotice = (id) => {
     setClosedNotices(prev => new Set([...prev, id]));
   };
 
-  const noticeTypes = [
-    { id: 'all', label: 'Barchasi', emoji: '📢' },
-    { id: 'course', label: 'Kurslar', emoji: '🎓' },
-    { id: 'event', label: 'Tadbirlar', emoji: '📅' },
-    { id: 'promotion', label: 'Aksiyalar', emoji: '🎉' },
-    { id: 'blog', label: 'Blog', emoji: '📝' },
-    { id: 'update', label: "Yangiliklar", emoji: '🔄' }
-  ];
+  const filteredNotifications = useMemo(() => {
+    if (!Array.isArray(notifications)) {
+      return [];
+    }
+    return notifications
+      .filter(notice => {
+        const isNotClosed = !closedNotices.has(notice._id);
+        const matchesType = selectedType === 'all' || 
+                          (selectedType === 'blog' && notice.isNotification);
+        return isNotClosed && matchesType;
+      })
+      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+  }, [notifications, closedNotices, selectedType]);
 
-  const visibleNotices = notices.filter(notice => {
-    const isNotClosed = !closedNotices.has(notice.id);
-    const matchesType = selectedType === 'all' || notice.type === selectedType;
-    return isNotClosed && matchesType;
-  }).sort((a, b) => {
-    // Sort by pinned status first, then by date
-    if (a.isPinned && !b.isPinned) return -1;
-    if (!a.isPinned && b.isPinned) return 1;
-    return new Date(b.date) - new Date(a.date);
-  });
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center py-8">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
 
-  if (visibleNotices.length === 0 && selectedType === 'all') return null;
+  // Only show the component if there are notifications
+  if (filteredNotifications.length === 0) return null;
 
   return (
-    <div className="max-w-6xl mx-auto px-6 sm:px-12 py-12">
-      <div className="text-center mb-8">
-        <h2 className="text-3xl font-bold mb-4">
-          <span className="text-blue-500">So'nggi</span> Yangiliklar
-        </h2>
-        <p className="text-gray-400 max-w-2xl mx-auto">
-          Kurslar, tadbirlar va boshqa muhim yangiliklardan xabardor bo'lib turing
-        </p>
-      </div>
-
-      {/* Notice Type Filter */}
-      <div className="flex justify-center gap-2 mb-8 overflow-x-auto pb-2">
-        {noticeTypes.map(type => (
-          <button
-            key={type.id}
-            onClick={() => setSelectedType(type.id)}
-            className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
-              selectedType === type.id
-                ? 'bg-blue-500 text-white scale-105'
-                : 'bg-gray-800/50 text-gray-400 hover:bg-gray-800 hover:text-white'
-            }`}
-          >
-            <span className="mr-2">{type.emoji}</span>
-            {type.label}
-          </button>
-        ))}
-      </div>
-
-      {/* Notices */}
-      <div className="space-y-4">
-        {visibleNotices.map(notice => (
-          <NoticeItem 
-            key={notice.id} 
-            notice={notice} 
-            onClose={handleCloseNotice}
-          />
-        ))}
-      </div>
-
-      {/* Empty State */}
-      {visibleNotices.length === 0 && (
-        <div className="text-center py-8">
-          <div className="text-4xl mb-4">📭</div>
-          <h3 className="text-xl font-bold text-gray-400 mb-2">
-            Bu turkumda hozircha e'lonlar yo'q
-          </h3>
-          <p className="text-gray-500">
-            Boshqa turkumni tanlang yoki keyinroq qaytib keling
+    <div className="bg-gray-900 py-12">
+      <div className="max-w-7xl mx-auto px-4">
+        <div className="text-center mb-8">
+          <h2 className="text-3xl font-bold text-white mb-4">
+            <span className="text-blue-500">Muhim</span> Xabarlar
+          </h2>
+          <p className="text-gray-400 max-w-2xl mx-auto">
+            Eng so'nggi yangiliklar va e'lonlardan xabardor bo'lib turing
           </p>
         </div>
-      )}
+
+        {/* Notifications */}
+        <div className="space-y-4">
+          {filteredNotifications.map((notice) => (
+            <Link
+              key={notice._id}
+              to={`/blog/${notice._id}`}
+              className="block bg-gray-800/50 rounded-xl p-6 hover:bg-gray-800 transition-colors relative group"
+            >
+              <div className="flex items-center gap-3 mb-2">
+                <span className="px-2.5 py-1 bg-blue-500 text-white rounded-full text-xs font-medium">
+                  {notice.category}
+                </span>
+                <span className="px-2.5 py-1 bg-blue-500/10 text-blue-400 rounded-full text-xs font-medium flex items-center gap-1">
+                  <Bell size={12} />
+                  Muhim
+                </span>
+              </div>
+              
+              <h3 className="text-xl font-semibold text-white mb-2 group-hover:text-blue-400 transition-colors">
+                {notice.title}
+              </h3>
+              
+              <p className="text-gray-300 mb-4 line-clamp-2">
+                {notice.excerpt}
+              </p>
+              
+              <div className="flex items-center justify-between text-sm text-gray-400">
+                <div className="flex items-center gap-2">
+                  <img
+                    src={notice.author?.profilePicture || "/default-avatar.png"}
+                    alt={notice.author?.name}
+                    className="w-6 h-6 rounded-full"
+                  />
+                  <span>{notice.author?.name}</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <Clock size={14} />
+                  {new Date(notice.createdAt).toLocaleDateString()}
+                </div>
+              </div>
+
+              <button
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  handleCloseNotice(notice._id);
+                }}
+                className="absolute top-4 right-4 p-2 text-gray-400 hover:text-gray-300 opacity-0 group-hover:opacity-100 transition-opacity"
+                aria-label="Close notification"
+              >
+                <X size={16} />
+              </button>
+            </Link>
+          ))}
+        </div>
+      </div>
     </div>
   );
-}
+};
+
+export default NoticeBoard;

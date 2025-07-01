@@ -1,5 +1,7 @@
-import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import React, { useState, useEffect, useMemo } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import axios from '../../config/axios';
+import { useAuth } from '../../context/AuthContext';
 import { 
   Calendar, 
   Clock, 
@@ -20,49 +22,9 @@ import {
   PenTool,
   Mail,
   ArrowRight,
-  Filter
+  Filter,
+  Bell
 } from 'lucide-react';
-
-// Sample blog data (later we can fetch this from an API)
-const blogPosts = [
-  {
-    id: 1,
-    title: "TOPIK imtihoniga tayyorgarlik bo'yicha muhim maslahatlar",
-    excerpt: "TOPIK imtihonida yuqori ball olish uchun qanday tayyorgarlik ko'rish kerak? Bugun biz eng muhim maslahatlarni ulashamiz...",
-    category: "TOPIK",
-    author: "Shoxrux 쌤",
-    date: "2025-06-18",
-    readTime: "5 min",
-    image: "/blog/topik-tips.jpg",
-    tags: ["TOPIK", "Imtihon", "Maslahatlar"],
-    views: 1250,
-    likes: 89,
-    comments: 23
-  },
-  {
-    id: 2,
-    title: "Koreys tilini o'rganishning eng samarali usullari",
-    excerpt: "Koreys tilini mustaqil o'rganish uchun foydali materiallar va samarali metodlar haqida batafsil ma'lumot...",
-    category: "O'rganish",
-    author: "Shoxrux 쌤",
-    date: "2025-06-17",
-    readTime: "7 min",
-    image: "/blog/korean-study.jpg",
-    tags: ["Koreys tili", "O'rganish", "Metodika"],
-    views: 980,
-    likes: 76,
-    comments: 15
-  },
-  // Add more blog posts...
-];
-
-const trendingTopics = [
-  "TOPIK 2025 Yangiliklari",
-  "Koreya Universitetlari",
-  "Online Ta'lim",
-  "Grammar Tips",
-  "Speaking Practice"
-];
 
 const categories = [
   { id: "all", label: "Barchasi", icon: Newspaper },
@@ -75,13 +37,17 @@ const categories = [
 
 const NewsCard = ({ post, size = "normal" }) => (
   <article className={`group cursor-pointer ${
+    post.isNotification 
+      ? 'border-2 border-blue-500/30 shadow-lg shadow-blue-500/10' 
+      : ''
+    } bg-gray-800/50 rounded-xl p-6 ${
     size === "large" ? "grid md:grid-cols-2 gap-6" : "flex flex-col"
   }`}>
     <div className={`overflow-hidden rounded-xl ${
       size === "large" ? "h-full" : "h-48 md:h-56"
     }`}>
       <img 
-        src={post.image || 'https://placehold.co/800x400/1a365d/ffffff?text=News'} 
+        src={post.coverImage || 'https://placehold.co/800x400/1a365d/ffffff?text=News'} 
         alt={post.title}
         className="w-full h-full object-cover transform transition-transform group-hover:scale-105"
       />
@@ -89,217 +55,304 @@ const NewsCard = ({ post, size = "normal" }) => (
     
     <div className="flex-1 py-4">
       <div className="flex items-center gap-3 mb-3">
-        <span className="px-2.5 py-1 bg-blue-500/10 text-blue-500 rounded-full text-xs font-medium">
+        <span className="px-2.5 py-1 bg-blue-500 text-white rounded-full text-xs font-medium">
           {post.category}
         </span>
-        <span className="text-gray-400 text-sm flex items-center gap-1">
+        {post.isNotification && (
+          <span className="px-2.5 py-1 bg-blue-500/10 text-blue-400 rounded-full text-xs font-medium flex items-center gap-1">
+            <Bell size={12} />
+            Muhim
+          </span>
+        )}
+        <span className="text-gray-300 text-sm flex items-center gap-1">
           <Clock size={14} />
-          {post.readTime}
+          {`${Math.ceil((post.content?.length || 0) / 1000)} min o'qish`}
         </span>
-      </div>
+      </div>          <Link to={`/blog/${post._id}`}>
+            <h3 className={`${
+              size === "large" ? "text-2xl" : "text-lg"
+            } font-bold text-white mb-2 group-hover:text-blue-400`}>
+              {post.title}
+            </h3>
+          </Link>
 
-      <h3 className={`${
-        size === "large" ? "text-2xl md:text-3xl" : "text-lg"
-      } font-bold text-white mb-2 line-clamp-2 group-hover:text-blue-400 transition-colors`}>
-        {post.title}
-      </h3>
+          <p className="text-gray-300 mb-4 line-clamp-2">{post.excerpt}</p>
 
-      <p className="text-gray-400 mb-4 line-clamp-2">
-        {post.excerpt}
-      </p>
-
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4 text-sm text-gray-400">
-          <span className="flex items-center gap-1">
-            <ThumbsUp size={14} />
-            {post.likes}
-          </span>
-          <span className="flex items-center gap-1">
-            <MessageCircle size={14} />
-            {post.comments}
-          </span>
-        </div>
-        <Link 
-          to={`/blog/${post.id}`}
-          className="text-blue-400 hover:text-blue-300 flex items-center gap-1 transition-colors"
-        >
-          Batafsil
-          <ChevronRight size={16} />
-        </Link>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-gray-300">{post.author?.name}</span>
+            </div>
+            <div className="flex items-center gap-4 text-gray-300">
+              <span className="flex items-center gap-1">
+                <ThumbsUp size={16} />
+                {post.likes?.length || 0}
+              </span>
+              <span className="flex items-center gap-1">
+                <MessageCircle size={16} />
+                {post.comments?.length || 0}
+              </span>
+              <button
+                onClick={(e) => {
+                  e.preventDefault();
+                  post.onSave?.(post._id);
+                }}
+                className={`flex items-center gap-1 ${
+                  post.isSaved ? 'text-blue-500' : 'text-gray-300'
+                } hover:text-blue-500 transition-colors`}
+              >
+                <Bookmark size={16} className={post.isSaved ? 'fill-current' : ''} />
+              </button>
+            </div>
       </div>
     </div>
   </article>
 );
 
-const NewsletterSignup = () => (
-  <div className="bg-blue-500/10 rounded-xl p-6">
-    <h3 className="font-bold mb-2 flex items-center gap-2">
-      <Mail size={20} className="text-blue-500" />
-      Yangiliklardan xabardor bo'ling
-    </h3>
-    <p className="text-gray-400 text-sm mb-4">
-      Eng so'nggi maqolalar va yangiliklar to'g'ridan-to'g'ri emailingizga boradi
-    </p>
-    <form className="space-y-3">
-      <input
-        type="email"
-        placeholder="Email manzilingiz"
-        className="w-full px-4 py-2.5 bg-gray-800/50 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
-      />
-      <button
-        type="submit"
-        className="w-full bg-blue-500 hover:bg-blue-600 text-white py-2.5 rounded-lg flex items-center justify-center gap-2 transition-colors"
-      >
-        Obuna bo'lish
-        <ArrowRight size={16} />
-      </button>
-    </form>
-  </div>
-);
-
-export default function Blog() {
-  const [searchTerm, setSearchTerm] = useState('');
+const Blog = () => {  const { user } = useAuth();
+  const [posts, setPosts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [selectedCategory, setSelectedCategory] = useState('all');
-  const [timeFilter, setTimeFilter] = useState('all');
-  const [sortBy, setSortBy] = useState('newest');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [trendingTopics, setTrendingTopics] = useState([]);
+  const [savingPost, setSavingPost] = useState(null);
+  const filteredPosts = useMemo(() => {
+    if (!Array.isArray(posts)) {
+      return [];
+    }
+    
+    return posts
+      .filter(post => {
+        // Category filter
+        if (selectedCategory !== 'all' && post.category?.toLowerCase() !== selectedCategory.toLowerCase()) {
+          return false;
+        }
+        
+        // Search term filter
+        if (searchTerm) {
+          const searchLower = searchTerm.toLowerCase();
+          return (
+            post.title?.toLowerCase().includes(searchLower) ||
+            post.excerpt?.toLowerCase().includes(searchLower) ||
+            post.content?.toLowerCase().includes(searchLower) ||
+            post.category?.toLowerCase().includes(searchLower) ||
+            post.author?.name?.toLowerCase().includes(searchLower)
+          );
+        }
+        
+        return true;
+      })
+      .sort((a, b) => {
+        // First sort by notification status
+        if (a.isNotification && !b.isNotification) return -1;
+        if (!a.isNotification && b.isNotification) return 1;
+        
+        // Then sort by creation date
+        return new Date(b.createdAt) - new Date(a.createdAt);
+      });
+  }, [posts, searchTerm, selectedCategory]);  const handleSave = async (postId) => {
+    if (!user) {
+      navigate('/signin');
+      return;
+    }
 
-  const mainStory = blogPosts[0];
-  const otherStories = blogPosts.slice(1);
+    try {
+      setSavingPost(postId);
+      const post = posts.find(p => p._id === postId);
+      const isSaved = post?.savedBy?.includes(user._id);
 
-  const filteredStories = otherStories
-    .filter(post => {
-      if (selectedCategory !== 'all') {
-        return post.category.toLowerCase() === selectedCategory;
+      const response = await axios[isSaved ? 'delete' : 'post'](
+        `http://localhost:5000/api/blogs/${postId}/save`,
+        {},
+        { withCredentials: true }
+      );
+      
+      setPosts(prev => prev.map(p => {
+        if (p._id === postId) {
+          return {
+            ...p,
+            savedBy: response.data.isSaved
+              ? [...(p.savedBy || []), user._id]
+              : (p.savedBy || []).filter(id => id !== user._id)
+          };
+        }
+        return p;
+      }));
+    } catch (err) {
+      console.error('Error saving blog:', err);
+    } finally {
+      setSavingPost(null);
+    }
+  };
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        const url = selectedCategory === 'all' 
+          ? '/api/blogs'
+          : `/api/blogs?category=${selectedCategory}`;
+        const response = await axios.get(url);
+        const data = response.data || [];
+        setPosts(Array.isArray(data) ? data : []);
+      } catch (err) {
+        console.error('Failed to fetch blog posts:', err);
+        setPosts([]);
+        setError(err.message || 'Failed to fetch blog posts');
+      } finally {
+        setLoading(false);
       }
-      return true;
-    })
-    .filter(post => {
-      if (searchTerm) {
-        return post.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-               post.excerpt.toLowerCase().includes(searchTerm.toLowerCase());
+    };
+
+    fetchData();
+  }, [selectedCategory]);
+  useEffect(() => {
+    const fetchTrendingTopics = async () => {
+      try {
+        const response = await axios.get('/api/blogs/trending-topics');
+        setTrendingTopics(Array.isArray(response.data) ? response.data : []);
+      } catch (err) {
+        console.error('Failed to fetch trending topics:', err);
+        // Set some default topics if API fails
+        setTrendingTopics([
+          "TOPIK 2025",
+          "Koreys tili grammatikasi",
+          "Koreya universitetlari",
+          "O'qish bo'yicha maslahatlar",
+          "Stipendiyalar"
+        ]);
       }
-      return true;
-    })
-    .sort((a, b) => {
-      if (sortBy === 'newest') return new Date(b.date) - new Date(a.date);
-      if (sortBy === 'popular') return b.views - a.views;
-      return 0;
-    });
+    };
+
+    fetchTrendingTopics();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-900 pt-20">
+        <div className="flex justify-center items-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-900 pt-20">
+        <div className="text-center text-red-400 py-10">{error}</div>
+      </div>
+    );
+  }
 
   return (
-    <div className="pt-20 min-h-screen bg-gray-900 text-white">
-      {/* Search Header */}
-      <div className="sticky top-0 z-20 bg-gray-900/95 backdrop-blur">
-        <div className="max-w-7xl mx-auto px-6">
-          <div className="py-4 space-y-4">
-            {/* Search and Categories */}
-            <div className="flex flex-col md:flex-row gap-4">
-              <div className="flex-1 relative">
-                <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
-                <input
-                  type="text"
-                  placeholder="Maqolalarni qidirish..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-12 pr-4 py-2.5 bg-gray-800/50 rounded-full text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-              <div className="flex items-center gap-2 overflow-x-auto pb-2 md:pb-0">
-                {categories.map(({ id, label, icon: Icon }) => (
-                  <button
-                    key={id}
-                    onClick={() => setSelectedCategory(id)}
-                    className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${
-                      selectedCategory === id
-                        ? 'bg-blue-500 text-white'
-                        : 'bg-gray-800/50 text-gray-400 hover:bg-gray-800'
-                    }`}
-                  >
-                    <Icon size={16} />
-                    {label}
-                  </button>
-                ))}
-              </div>
+    <div className="min-h-screen bg-gray-900 pt-20">
+      <div className="max-w-7xl mx-auto px-4 py-8">
+        {/* Search and Filter Section */}
+        <div className="mb-8">
+          <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
+            <div className="relative flex-1 w-full">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
+              <input
+                type="text"
+                placeholder="Qidirish..."
+                className="w-full pl-10 pr-4 py-2 bg-gray-800 border-gray-700 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-gray-400"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
             </div>
-            
-            {/* Filters */}
-            <div className="flex items-center justify-between gap-4 text-sm">
-              <div className="flex items-center gap-4">
-                <select
-                  value={timeFilter}
-                  onChange={(e) => setTimeFilter(e.target.value)}
-                  className="bg-gray-800/50 text-gray-400 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            <div className="flex gap-2 overflow-x-auto pb-2 w-full md:w-auto">
+              {categories.map((cat) => (
+                <button
+                  key={cat.id}
+                  onClick={() => setSelectedCategory(cat.id)}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-lg whitespace-nowrap ${
+                    selectedCategory === cat.id
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
+                  }`}
                 >
-                  <option value="all">Barcha vaqt</option>
-                  <option value="today">Bugun</option>
-                  <option value="week">Shu hafta</option>
-                  <option value="month">Shu oy</option>
-                </select>
-                
-                <select
-                  value={sortBy}
-                  onChange={(e) => setSortBy(e.target.value)}
-                  className="bg-gray-800/50 text-gray-400 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="newest">Eng yangi</option>
-                  <option value="popular">Eng mashhur</option>
-                </select>
-              </div>
-              
-              <div className="text-gray-400">
-                {filteredStories.length} ta maqola topildi
-              </div>
+                  <cat.icon size={16} />
+                  {cat.label}
+                </button>
+              ))}
             </div>
           </div>
         </div>
-      </div>
 
-      <div className="max-w-7xl mx-auto px-6 py-8">
-        <div className="grid lg:grid-cols-[1fr,300px] gap-12">
-          {/* Main Content */}
-          <div className="space-y-12">
-            {/* Featured Story */}
-            <div>
-              <h2 className="text-2xl font-bold mb-6">Asosiy Yangilik</h2>
-              <NewsCard post={mainStory} size="large" />
-            </div>
-
-            {/* Latest Stories */}
-            <div>
-              <h2 className="text-2xl font-bold mb-6">So'nggi Maqolalar</h2>
-              <div className="grid md:grid-cols-2 gap-8">
-                {filteredStories.map(post => (
-                  <NewsCard key={post.id} post={post} />
-                ))}
-              </div>
+        {/* Main Content */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Blog Posts */}
+          <div className="lg:col-span-2">
+            <div className="space-y-8">
+              {filteredPosts.length > 0 ? (
+                filteredPosts.map((post, index) => (
+                  <NewsCard 
+                    key={post._id} 
+                    post={post} 
+                    size={index === 0 ? "large" : "normal"} 
+                  />
+                ))
+              ) : (
+                <div className="text-center py-10 text-gray-400">
+                  Bloglar topilmadi
+                </div>
+              )}
             </div>
           </div>
 
           {/* Sidebar */}
-          <aside className="space-y-8">
-            {/* Newsletter Signup */}
-            <NewsletterSignup />
-            
+          <div className="space-y-8">
             {/* Trending Topics */}
-            <div className="bg-gray-800/50 rounded-xl p-6">
-              <h3 className="font-bold mb-4 flex items-center gap-2">
-                <TrendingUp size={20} className="text-blue-500" />
-                Trend Mavzular
+            <div className="bg-gray-800 rounded-xl p-6">
+              <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
+                <TrendingUp size={20} className="text-blue-400" />
+                Trenddagi Mavzular
               </h3>
               <div className="space-y-3">
-                {trendingTopics.map((topic, index) => (
-                  <button
+                {trendingTopics.map((topic, index) => (                  <button
                     key={index}
-                    className="w-full text-left px-4 py-2 rounded-lg bg-gray-800/50 text-gray-300 hover:bg-gray-800 hover:text-white transition-colors"
+                    className="flex items-center gap-2 text-gray-300 hover:text-blue-400 w-full text-left px-3 py-2 rounded-lg hover:bg-gray-700/50"
+                    onClick={() => {
+                      setSearchTerm(topic);
+                      setSelectedCategory('all'); // Reset category when searching by topic
+                    }}
                   >
+                    <Tag size={16} />
                     {topic}
                   </button>
                 ))}
               </div>
             </div>
-          </aside>
+
+            {/* Newsletter Subscription */}
+            <div className="bg-gray-800/50 rounded-xl p-6">
+              <h3 className="text-lg font-bold text-white mb-2 flex items-center gap-2">
+                <Mail size={20} className="text-blue-400" />
+                Yangiliklardan xabardor bo'ling
+              </h3>
+              <p className="text-gray-300 mb-4">
+                Eng so'nggi yangiliklarni birinchilardan bo'lib bilib turing
+              </p>
+              <form className="space-y-3">
+                <input
+                  type="email"
+                  placeholder="Email manzilingiz"
+                  className="w-full px-4 py-2 rounded-lg bg-gray-900 border-gray-700 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-gray-400"
+                />
+                <button
+                  type="submit"
+                  className="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center gap-2"
+                >
+                  <span>Obuna bo'lish</span>
+                  <ArrowRight size={16} />
+                </button>
+              </form>
+            </div>
+          </div>
         </div>
       </div>
     </div>
   );
-}
+};
+export default Blog;

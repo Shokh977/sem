@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { 
   GraduationCap, 
   BookOpen, 
@@ -18,6 +19,17 @@ const FloatingIcon = ({ Icon, className }) => (
 );
 
 export default function Hero() {
+  const navigate = useNavigate();
+
+  const scrollToCourses = () => {
+    const coursesSection = document.getElementById('courses');
+    if (coursesSection) {
+      coursesSection.scrollIntoView({ behavior: 'smooth' });
+    } else {
+      navigate('/courses');
+    }
+  };
+
   return (
     <section className="bg-gradient-to-b from-gray-900 to-gray-800 text-blue-100 min-h-screen flex flex-col justify-center px-8 sm:px-12 lg:px-24 relative overflow-hidden">
       {/* Floating Icons with wider positioning */}
@@ -44,21 +56,19 @@ export default function Hero() {
           <p className="text-blue-300 text-xl sm:text-2xl mb-12 max-w-2xl mx-auto leading-relaxed">
             TOPIK kerakmi? <span className="text-blue-400 font-semibold">Koreys Tilida</span> erkin gapirishni hohlaysizmi? 
             <span className="block mt-2 text-blue-400 font-semibold">Bizda</span> siz uchun eng yaxshi kurslar mavjud.
-          </p>
-
-          <div className="flex flex-col sm:flex-row justify-center gap-6">
-            <a
-              href="#courses"
+          </p>          <div className="flex flex-col sm:flex-row justify-center gap-6">
+            <button
+              onClick={scrollToCourses}
               className="px-8 py-4 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 rounded-full text-white font-bold text-lg transition-all transform hover:scale-105 shadow-lg hover:shadow-blue-500/50"
             >
               Kurs haqida
-            </a>
-            <a
-              href="#signup"
+            </button>
+            <Link
+              to="/signup"
               className="px-8 py-4 bg-gray-800/80 backdrop-blur border-2 border-blue-500/50 hover:border-blue-500 rounded-full text-blue-400 hover:text-blue-300 font-bold text-lg transition-all transform hover:scale-105 shadow-lg hover:shadow-blue-500/25"
             >
               Ro'yxatdan o'tish
-            </a>
+            </Link>
           </div>
         </div>
       </div>

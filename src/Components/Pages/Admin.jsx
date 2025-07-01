@@ -1,165 +1,368 @@
 import React, { useState, useEffect } from 'react';
-import { Calendar, Clock, User, Phone, School, MessageSquare, CheckCircle2, XCircle } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext';
+import axios from 'axios';
+import BlogManagement from './BlogManagement';
+import CourseManagement from './CourseManagement';
+import AboutManagement from './AboutManagement';
+import SuccessManagement from './SuccessManagement';
+import { 
+  Settings, 
+  UserCog, 
+  LogOut, 
+  CheckCircle2, 
+  XCircle,
+  Clock,
+  MessageSquare,
+  Calendar,
+  Phone,
+  School,
+  Tag,
+  Mail,
+  AlertCircle,
+  Loader2,
+  RefreshCcw,
+  BookOpen,
+  Book,
+  FileText,
+  User,
+  Star
+} from 'lucide-react';
 
 export default function Admin() {
-  const [submissions, setSubmissions] = useState([]);
-  const [filter, setFilter] = useState('all'); // 'all', 'trial', or 'consultation'
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
+  const [inquiries, setInquiries] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [typeFilter, setTypeFilter] = useState('all');
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [editingInquiry, setEditingInquiry] = useState(null);
+  const [adminNote, setAdminNote] = useState('');
+  const [activeSection, setActiveSection] = useState('inquiries');
 
   useEffect(() => {
-    // Load submissions from localStorage
-    const loadSubmissions = () => {
-      const stored = JSON.parse(localStorage.getItem('contactSubmissions') || '[]');
-      setSubmissions(stored.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp)));
-    };
+    fetchInquiries();
+  }, [typeFilter, statusFilter]);
 
-    loadSubmissions();
-    // Set up an interval to check for new submissions
-    const interval = setInterval(loadSubmissions, 5000);
+  const fetchInquiries = async () => {
+    try {
+      setLoading(true);
+      const response = await axios.get(
+        `http://localhost:5000/api/inquiries?type=${typeFilter}&status=${statusFilter}`,
+        { withCredentials: true }
+      );
+      setInquiries(Array.isArray(response.data) ? response.data : []);
+    } catch (err) {
+      console.error('Failed to fetch inquiries:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    return () => clearInterval(interval);
-  }, []);
+  const handleStatusChange = async (id, newStatus) => {
+    try {
+      await axios.put(
+        `http://localhost:5000/api/inquiries/${id}`,
+        { 
+          status: newStatus,
+          adminNotes: adminNote
+        },
+        { withCredentials: true }
+      );
+      fetchInquiries();
+      setEditingInquiry(null);
+      setAdminNote('');
+    } catch (err) {
+      console.error('Failed to update inquiry:', err);
+    }
+  };
 
-  const filteredSubmissions = submissions.filter(sub => 
-    filter === 'all' ? true : sub.type === filter
-  );
+  const handleLogout = async () => {
+    await logout();
+    navigate('/');
+  };
 
-  const handleStatusChange = (index, newStatus) => {
-    const updatedSubmissions = [...submissions];
-    updatedSubmissions[index].status = newStatus;
-    setSubmissions(updatedSubmissions);
-    localStorage.setItem('contactSubmissions', JSON.stringify(updatedSubmissions));
+  const getStatusColor = (status) => {
+    switch (status) {
+      case 'new': return 'bg-yellow-500/10 text-yellow-400';
+      case 'in-progress': return 'bg-blue-500/10 text-blue-400';
+      case 'completed': return 'bg-green-500/10 text-green-400';
+      case 'rejected': return 'bg-red-500/10 text-red-400';
+      default: return 'bg-gray-500/10 text-gray-400';
+    }
+  };
+
+  const getStatusText = (status) => {
+    switch (status) {
+      case 'new': return 'Yangi';
+      case 'in-progress': return 'Jarayonda';
+      case 'completed': return 'Bajarildi';
+      case 'rejected': return 'Rad etildi';
+      default: return status;
+    }
   };
 
   return (
     <div className="pt-20 min-h-screen bg-gray-900 text-white">
       <div className="max-w-6xl mx-auto px-6 sm:px-12 py-8">
-        <h1 className="text-3xl font-bold mb-8">Admin Panel</h1>
+        {/* Admin Header */}
+        <div className="bg-gray-800 rounded-xl p-6 mb-8">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-4">
+              <Settings size={32} className="text-blue-400" />
+              <div>
+                <div className="flex items-center gap-2">
+                  <h1 className="text-3xl font-bold">{user?.name}</h1>
+                  <span className="px-2 py-1 bg-blue-500/10 text-blue-400 rounded text-sm">
+                    Administrator
+                  </span>
+                </div>
+                <p className="text-gray-400">{user?.email}</p>
+              </div>
+            </div>
+            <button
+              onClick={handleLogout}
+              className="flex items-center gap-2 px-4 py-2 bg-red-500/10 text-red-400 rounded-lg hover:bg-red-500/20"
+            >
+              <LogOut size={20} />
+              Chiqish
+            </button>
+          </div>
+        </div>
 
-        {/* Filter Buttons */}
+        {/* Section Navigation */}
         <div className="flex gap-4 mb-8">
           <button
-            onClick={() => setFilter('all')}
-            className={`px-4 py-2 rounded-lg ${
-              filter === 'all' 
-                ? 'bg-blue-500 text-white' 
-                : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
+            onClick={() => setActiveSection('inquiries')}
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg ${
+              activeSection === 'inquiries'
+                ? 'bg-blue-500/10 text-blue-400'
+                : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
             }`}
           >
-            Hammasi
+            <MessageSquare size={20} />
+            So'rovlar
           </button>
           <button
-            onClick={() => setFilter('trial')}
-            className={`px-4 py-2 rounded-lg ${
-              filter === 'trial' 
-                ? 'bg-blue-500 text-white' 
-                : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
+            onClick={() => setActiveSection('courses')}
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg ${
+              activeSection === 'courses'
+                ? 'bg-blue-500/10 text-blue-400'
+                : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
             }`}
           >
-            Sinov darsi
+            <Book size={20} />
+            Kurslar
           </button>
           <button
-            onClick={() => setFilter('consultation')}
-            className={`px-4 py-2 rounded-lg ${
-              filter === 'consultation' 
-                ? 'bg-blue-500 text-white' 
-                : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
+            onClick={() => setActiveSection('blogs')}
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg ${
+              activeSection === 'blogs'
+                ? 'bg-blue-500/10 text-blue-400'
+                : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
             }`}
           >
-            Konsultatsiya
+            <FileText size={20} />
+            Blog
+          </button>          <button
+            onClick={() => setActiveSection('about')}
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg ${
+              activeSection === 'about'
+                ? 'bg-blue-500/10 text-blue-400'
+                : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
+            }`}
+          >
+            <User size={20} />
+            Biz haqimizda
+          </button>
+          <button
+            onClick={() => setActiveSection('success')}
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg ${
+              activeSection === 'success'
+                ? 'bg-blue-500/10 text-blue-400'
+                : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
+            }`}
+          >
+            <Star size={20} />
+            Bitiruvchilar
           </button>
         </div>
 
-        {/* Submissions Grid */}
-        <div className="grid gap-6">
-          {filteredSubmissions.map((submission, index) => (
-            <div 
-              key={submission.timestamp} 
-              className="bg-gray-800 rounded-xl p-6 space-y-4"
-            >
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <span className={`px-3 py-1 rounded-full text-sm ${
-                    submission.type === 'trial' 
-                      ? 'bg-green-500/10 text-green-400'
-                      : 'bg-blue-500/10 text-blue-400'
-                  }`}>
-                    {submission.type === 'trial' ? 'Sinov darsi' : 'Konsultatsiya'}
-                  </span>
-                  <span className={`px-3 py-1 rounded-full text-sm ${
-                    submission.status === 'new' 
-                      ? 'bg-yellow-500/10 text-yellow-400'
-                      : submission.status === 'completed'
-                      ? 'bg-green-500/10 text-green-400'
-                      : 'bg-red-500/10 text-red-400'
-                  }`}>
-                    {submission.status === 'new' ? 'Yangi' : submission.status === 'completed' ? 'Bajarildi' : 'Rad etildi'}
-                  </span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => handleStatusChange(index, 'completed')}
-                    className="p-2 hover:bg-green-500/10 rounded-lg text-green-400"
-                    title="Bajarildi"
-                  >
-                    <CheckCircle2 size={20} />
-                  </button>
-                  <button
-                    onClick={() => handleStatusChange(index, 'rejected')}
-                    className="p-2 hover:bg-red-500/10 rounded-lg text-red-400"
-                    title="Rad etish"
-                  >
-                    <XCircle size={20} />
-                  </button>
-                </div>
-              </div>
+        {/* Active Section Content */}
+        {activeSection === 'courses' ? (
+          <CourseManagement />
+        ) : activeSection === 'about' ? (
+          <AboutManagement />
+        ) : activeSection === 'success' ? (
+          <SuccessManagement />
+        ) : activeSection === 'inquiries' ? (
+          <>
+            {/* Filters */}
+            <div className="flex flex-wrap gap-4 mb-8">
+              <select
+                value={typeFilter}
+                onChange={(e) => setTypeFilter(e.target.value)}
+                className="bg-gray-800 text-white rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="all">Barcha turlar</option>
+                <option value="trial">Sinov darsi</option>
+                <option value="consultation">Konsultatsiya</option>
+                <option value="enrollment">Kursga yozilish</option>
+                <option value="other">Boshqa</option>
+              </select>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <div className="flex items-center gap-2 text-gray-400">
-                    <User size={16} />
-                    <span className="text-white">{submission.name}</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-gray-400">
-                    <Phone size={16} />
-                    <span className="text-white">{submission.phone}</span>
-                  </div>
-                  {submission.university && (
-                    <div className="flex items-center gap-2 text-gray-400">
-                      <School size={16} />
-                      <span className="text-white">{submission.university}</span>
+              <select
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+                className="bg-gray-800 text-white rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="all">Barcha statuslar</option>
+                <option value="new">Yangi</option>
+                <option value="in-progress">Jarayonda</option>
+                <option value="completed">Bajarildi</option>
+                <option value="rejected">Rad etildi</option>
+              </select>
+
+              <button
+                onClick={fetchInquiries}
+                className="flex items-center gap-2 px-4 py-2 bg-gray-800 text-gray-300 rounded-lg hover:bg-gray-700"
+              >
+                <RefreshCcw size={20} />
+                Yangilash
+              </button>
+            </div>
+
+            {/* Inquiries List */}
+            {loading ? (
+              <div className="flex justify-center py-8">
+                <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {inquiries.map((inquiry) => (
+                  <div
+                    key={inquiry._id}
+                    className="bg-gray-800/50 rounded-xl p-6"
+                  >
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="flex items-center gap-3">
+                        <span className="px-3 py-1 rounded-full text-sm bg-blue-500/10 text-blue-400">
+                          {inquiry.type === 'trial' ? 'Sinov darsi' :
+                           inquiry.type === 'consultation' ? 'Konsultatsiya' :
+                           inquiry.type === 'enrollment' ? 'Kursga yozilish' :
+                           'Boshqa'}
+                        </span>
+                        <span className={`px-3 py-1 rounded-full text-sm ${getStatusColor(inquiry.status)}`}>
+                          {getStatusText(inquiry.status)}
+                        </span>
+                      </div>
+                      <span className="text-sm text-gray-400">
+                        {new Date(inquiry.createdAt).toLocaleString()}
+                      </span>
                     </div>
-                  )}
-                </div>
-                
-                <div className="space-y-2">
-                  <div className="flex items-center gap-2 text-gray-400">
-                    <Calendar size={16} />
-                    <span>{new Date(submission.timestamp).toLocaleDateString('uz-UZ')}</span>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-2 text-gray-300">
+                          <UserCog size={16} />
+                          <span>{inquiry.name}</span>
+                        </div>
+                        <div className="flex items-center gap-2 text-gray-300">
+                          <Phone size={16} />
+                          <span>{inquiry.phone}</span>
+                        </div>
+                        {inquiry.university && (
+                          <div className="flex items-center gap-2 text-gray-300">
+                            <School size={16} />
+                            <span>{inquiry.university}</span>
+                          </div>
+                        )}
+                        {inquiry.courseId && (
+                          <div className="flex items-center gap-2 text-gray-300">
+                            <Book size={16} />
+                            <span>{inquiry.courseTitle || 'Kurs'}</span>
+                          </div>
+                        )}
+                      </div>
+                      <div className="bg-gray-900/50 rounded-lg p-4">
+                        <p className="text-gray-300">{inquiry.message}</p>
+                      </div>
+                    </div>
+
+                    {inquiry.adminNotes && (
+                      <div className="mb-4 p-4 bg-blue-500/5 rounded-lg">
+                        <div className="text-sm text-blue-400 mb-1">Admin izohi:</div>
+                        <p className="text-gray-300">{inquiry.adminNotes}</p>
+                      </div>
+                    )}
+
+                    {editingInquiry === inquiry._id ? (
+                      <div className="space-y-4">
+                        <textarea
+                          value={adminNote}
+                          onChange={(e) => setAdminNote(e.target.value)}
+                          placeholder="Admin izohini kiriting..."
+                          className="w-full px-4 py-2 bg-gray-900 border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          rows="3"
+                        />
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => handleStatusChange(inquiry._id, 'in-progress')}
+                            className="px-4 py-2 bg-blue-500/10 text-blue-400 rounded-lg hover:bg-blue-500/20"
+                          >
+                            Jarayonda
+                          </button>
+                          <button
+                            onClick={() => handleStatusChange(inquiry._id, 'completed')}
+                            className="px-4 py-2 bg-green-500/10 text-green-400 rounded-lg hover:bg-green-500/20"
+                          >
+                            Bajarildi
+                          </button>
+                          <button
+                            onClick={() => handleStatusChange(inquiry._id, 'rejected')}
+                            className="px-4 py-2 bg-red-500/10 text-red-400 rounded-lg hover:bg-red-500/20"
+                          >
+                            Rad etish
+                          </button>
+                          <button
+                            onClick={() => {
+                              setEditingInquiry(null);
+                              setAdminNote('');
+                            }}
+                            className="px-4 py-2 bg-gray-700 text-gray-300 rounded-lg hover:bg-gray-600"
+                          >
+                            Bekor qilish
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => {
+                            setEditingInquiry(inquiry._id);
+                            setAdminNote(inquiry.adminNotes || '');
+                          }}
+                          className="px-4 py-2 bg-gray-700 text-gray-300 rounded-lg hover:bg-gray-600"
+                        >
+                          Statusni o'zgartirish
+                        </button>
+                      </div>
+                    )}
                   </div>
-                  <div className="flex items-center gap-2 text-gray-400">
-                    <Clock size={16} />
-                    <span>{new Date(submission.timestamp).toLocaleTimeString('uz-UZ')}</span>
+                ))}
+
+                {inquiries.length === 0 && (
+                  <div className="text-center py-8 text-gray-400">
+                    <AlertCircle className="w-12 h-12 mx-auto mb-4" />
+                    <p>Hech qanday so'rov topilmadi</p>
                   </div>
-                </div>
+                )}
               </div>
-
-              {submission.message && (
-                <div className="border-t border-gray-700 pt-4">
-                  <div className="flex items-start gap-2 text-gray-400">
-                    <MessageSquare size={16} className="mt-1" />
-                    <p className="text-white">{submission.message}</p>
-                  </div>
-                </div>
-              )}
-            </div>
-          ))}
-
-          {filteredSubmissions.length === 0 && (
-            <div className="text-center py-12 text-gray-400">
-              So'rovlar topilmadi
-            </div>
-          )}
-        </div>
+            )}
+          </>
+        ) : activeSection === 'blogs' ? (
+          <BlogManagement />
+        ) : null}
       </div>
     </div>
   );

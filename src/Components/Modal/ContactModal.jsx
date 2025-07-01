@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { X, Send, Loader2 } from 'lucide-react';
+import axios from 'axios';
 
 export default function ContactModal({ isOpen, onClose, type }) {
   const [formData, setFormData] = useState({
@@ -26,24 +27,13 @@ export default function ContactModal({ isOpen, onClose, type }) {
     }
 
     try {
-      // Create submission object with timestamp and request type
-      const submission = {
+      // Send to backend API
+      await axios.post('http://localhost:5000/api/inquiries', {
         ...formData,
-        type,
-        timestamp: new Date().toISOString(),
-        status: 'new'
-      };
-
-      // Log to console in development
-      console.log('New submission:', submission);
-
-      // Store in localStorage for development/demo purposes
-      const existingSubmissions = JSON.parse(localStorage.getItem('contactSubmissions') || '[]');
-      existingSubmissions.push(submission);
-      localStorage.setItem('contactSubmissions', JSON.stringify(existingSubmissions));
-
-      // Here you would typically make an API call to your backend
-      await new Promise(resolve => setTimeout(resolve, 1500));
+        type
+      }, {
+        withCredentials: true
+      });
       
       setSuccess(true);
       setTimeout(() => {

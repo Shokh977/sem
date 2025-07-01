@@ -1,0 +1,248 @@
+import React, { useState, useEffect } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import axios from 'axios';
+import { 
+  Calendar, 
+  Clock, 
+  User, 
+  Tag, 
+  Share2,
+  MessageCircle,
+  ThumbsUp,
+  Bookmark,
+  Facebook,
+  Twitter,
+  Send,
+  Link as LinkIcon
+} from 'lucide-react';
+    content: `
+      <p>TOPIK (Test of Proficiency in Korean) imtihoni - bu koreys tilini bilish darajasini aniqlovchi rasmiy imtihon. Bu imtihondan yaxshi natija olish uchun quyidagi muhim maslahatlarga e'tibor bering:</p>
+
+      <h2>1. To'g'ri reja tuzish</h2>
+      <p>Imtihonga tayyorgarlik ko'rishni boshlaganingizda, avvalo aniq reja tuzing. Rejada quyidagi narsalar bo'lishi kerak:</p>
+      <ul>
+        <li>Kunlik o'rganish vaqti</li>
+        <li>O'rganiladigan mavzular ro'yxati</li>
+        <li>Mock testlar yechish jadvali</li>
+      </ul>
+
+      <h2>2. Grammar va Vocabulary</h2>
+      <p>TOPIK imtihonining eng muhim qismi - bu grammar va vocabularydir. Shuning uchun:</p>
+      <ul>
+        <li>Har kuni yangi so'zlarni o'rganing va takrorlang</li>
+        <li>Grammatik qoidalarni muntazam mashq qiling</li>
+        <li>Real hayotda qo'llashga harakat qiling</li>
+      </ul>
+
+      <h2>3. O'qish va Tinglab tushunish</h2>
+      <p>Reading va Listening seksiyalari uchun:</p>
+      <ul>
+        <li>Koreys yangiliklarini o'qing</li>
+        <li>K-drama va variety showlar ko'ring</li>
+        <li>Podcast eshiting</li>
+      </ul>
+
+      <h2>4. Mock testlar</h2>
+      <p>Imtihon formatiga ko'nikish uchun:</p>
+      <ul>
+        <li>Haftalik mock testlar yeching</li>
+        <li>Vaqtni to'g'ri taqsimlashni o'rganing</li>
+        <li>Xatolaringizni tahlil qiling</li>
+      </ul>
+    `,
+    category: "TOPIK",
+    author: "Shoxrux 쌤",
+    authorImage: "/assets/justit.jpg",
+    date: "2025-06-17",};
+
+export default function BlogDetail() {
+  const { blogId } = useParams();
+  const navigate = useNavigate();
+  const [post, setPost] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    const fetchBlog = async () => {
+      try {
+        const response = await axios.get(`http://localhost:5000/api/blogs/${blogId}`, {
+          withCredentials: true
+        });
+        setPost(response.data);
+      } catch (err) {
+        console.error('Failed to fetch blog:', err);
+        setError('Blog not found');
+        // Optionally navigate back if blog not found
+        // navigate('/blog');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchBlog();
+  }, [blogId]);
+
+  if (loading) {
+    return (
+      <div className="pt-20 min-h-screen bg-gray-900 text-white">
+        <div className="max-w-4xl mx-auto px-6 py-12">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto"></div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error || !post) {
+    return (
+      <div className="pt-20 min-h-screen bg-gray-900 text-white">
+        <div className="max-w-4xl mx-auto px-6 py-12">
+          <h1 className="text-2xl font-bold text-center">Maqola topilmadi</h1>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="pt-20 min-h-screen bg-gray-900 text-white">
+      {/* Hero Section */}
+      <div className="relative bg-gradient-to-b from-blue-600/10 to-transparent">
+        <div className="max-w-4xl mx-auto px-6 py-12">
+          {/* Category and Date */}
+          <div className="flex flex-wrap items-center gap-4 mb-6">
+            <span className="px-3 py-1 bg-blue-500 rounded-full text-sm font-medium">
+              {post.category}
+            </span>
+            <div className="flex items-center gap-4 text-sm text-gray-400">
+              <span className="flex items-center gap-1">
+                <Calendar size={14} />
+                {new Date(post.date).toLocaleDateString('uz-UZ')}
+              </span>
+              <span className="flex items-center gap-1">
+                <Clock size={14} />
+                {post.readTime}
+              </span>
+            </div>
+          </div>
+
+          {/* Title */}
+          <h1 className="text-4xl font-bold mb-8">{post.title}</h1>
+
+          {/* Author Info */}
+          <div className="flex items-center gap-4 mb-8">
+            <img
+              src={post.authorImage}
+              alt={post.author}
+              className="w-12 h-12 rounded-full object-cover"
+            />
+            <div>
+              <div className="font-medium">{post.author}</div>
+              <div className="text-sm text-gray-400">Korean Language Expert</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Main Content */}
+      <div className="max-w-4xl mx-auto px-6 py-12">
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr,200px] gap-12">
+          {/* Article Content */}
+          <article>
+            {/* Featured Image */}
+            <div className="rounded-xl overflow-hidden mb-8">
+              <img
+                src={post.image || 'https://placehold.co/1200x600/1a365d/ffffff?text=Blog+Post'}
+                alt={post.title}
+                className="w-full h-[400px] object-cover"
+              />
+            </div>
+
+            {/* Content */}
+            <div 
+              className="prose prose-lg prose-invert max-w-none"
+              dangerouslySetInnerHTML={{ __html: post.content }}
+            />
+
+            {/* Tags */}
+            <div className="flex flex-wrap gap-2 mt-8 pt-8 border-t border-gray-800">
+              {post.tags.map(tag => (
+                <span
+                  key={tag}
+                  className="px-3 py-1 bg-gray-800 rounded-full text-sm text-gray-300 flex items-center gap-1"
+                >
+                  <Tag size={14} />
+                  {tag}
+                </span>
+              ))}
+            </div>
+
+            {/* Engagement */}
+            <div className="flex items-center gap-6 mt-8">
+              <button className="flex items-center gap-2 text-gray-400 hover:text-blue-500 transition-colors">
+                <ThumbsUp size={20} />
+                <span>{post.likes}</span>
+              </button>
+              <button className="flex items-center gap-2 text-gray-400 hover:text-blue-500 transition-colors">
+                <MessageCircle size={20} />
+                <span>{post.comments}</span>
+              </button>
+              <button className="flex items-center gap-2 text-gray-400 hover:text-blue-500 transition-colors">
+                <Bookmark size={20} />
+                <span>Saqlab qo'yish</span>
+              </button>
+            </div>
+          </article>
+
+          {/* Sidebar */}
+          <aside className="space-y-8">
+            {/* Share Widget */}
+            <div className="bg-gray-800/50 rounded-xl p-6">
+              <h3 className="font-medium mb-4 flex items-center gap-2">
+                <Share2 size={18} />
+                Ulashish
+              </h3>
+              <div className="flex flex-col gap-3">
+                <button className="flex items-center gap-3 text-sm px-4 py-2 bg-[#1877f2]/10 hover:bg-[#1877f2]/20 rounded-lg text-[#1877f2]">
+                  <Facebook size={18} />
+                  Facebook
+                </button>
+                <button className="flex items-center gap-3 text-sm px-4 py-2 bg-[#1da1f2]/10 hover:bg-[#1da1f2]/20 rounded-lg text-[#1da1f2]">
+                  <Twitter size={18} />
+                  Twitter
+                </button>
+                <button className="flex items-center gap-3 text-sm px-4 py-2 bg-blue-500/10 hover:bg-blue-500/20 rounded-lg text-blue-500">
+                  <Send size={18} />
+                  Telegram
+                </button>
+                <button className="flex items-center gap-3 text-sm px-4 py-2 bg-gray-700/50 hover:bg-gray-700 rounded-lg text-gray-300">
+                  <LinkIcon size={18} />
+                  Havolani nusxalash
+                </button>
+              </div>
+            </div>
+
+            {/* Newsletter Signup */}
+            <div className="bg-gradient-to-br from-blue-500/20 to-purple-500/20 rounded-xl p-6">
+              <h3 className="font-medium mb-2">Yangiliklarga obuna bo'ling</h3>
+              <p className="text-sm text-gray-400 mb-4">
+                Eng so'nggi maqolalar va maslahatlardan xabardor bo'lib turing
+              </p>
+              <form className="space-y-3">
+                <input
+                  type="email"
+                  placeholder="Email manzilingiz"
+                  className="w-full px-4 py-2 bg-gray-900/50 rounded-lg border border-gray-700 text-white placeholder-gray-500 focus:outline-none focus:border-blue-500"
+                />
+                <button
+                  type="submit"
+                  className="w-full px-4 py-2 bg-blue-500 hover:bg-blue-600 rounded-lg font-medium transition-colors"
+                >
+                  Obuna bo'lish
+                </button>
+              </form>
+            </div>
+          </aside>
+        </div>
+      </div>
+    </div>
+  );
+}

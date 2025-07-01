@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Book, 
   Clock, 
@@ -13,125 +13,117 @@ import {
   ArrowRight
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import axios from '../../config/axios';
 
-const courses = [
-  {
-    id: 'topik1',
-    title: 'TOPIK 1 Tayyorgarlik',
-    level: 'Boshlang\'ich',
-    duration: '3 oy',
-    students: 120,
-    rating: 4.9,
-    price: '699,000',
-    image: '/course-topik.jpg',
-    category: 'TOPIK',
-    features: ['Individual darslar', 'Amaliy mashqlar', 'Mock testlar'],
-    description: 'TOPIK 1 imtihoniga to\'liq tayyorgarlik kursi. Grammatika, so\'z boyligi va test ishlash strategiyalari.',
-    lessons: 36
-  },
-  {
-    id: 'basic-korean',
-    title: 'Koreys tili boshlang\'ich',
-    level: 'Boshlang\'ich',
-    duration: '4 oy',
-    students: 200,
-    rating: 4.8,
-    price: '499,000',
-    image: '/course-basic.jpg',
-    category: 'General',
-    features: ['Guruh darslari', 'Audio materiallar', 'Uy vazifalar'],
-    description: 'Koreys tilini noldan o\'rganish uchun ideal kurs. Hangul, talaffuz va asosiy grammatika.',
-    lessons: 48
-  },
-  {
-    id: 3,
-    title: 'Muloqot darslari',
-    level: 'O\'rta',
-    duration: '2 oy',
-    students: 80,
-    rating: 4.9,
-    price: '699,000',
-    image: '/course-speaking.jpg',
-    category: 'Speaking',
-    features: ['Jonli muloqot', 'Situatsion dialoglar', 'Talaffuz mashqlari'],
-    description: 'Koreyslar bilan erkin muloqot qilishni o\'rganish uchun maxsus kurs.'
-  },
-  // Add more courses as needed
+const categories = [
+  { id: 'all', label: 'Barchasi' },
+  { id: 'topik', label: 'TOPIK' },
+  { id: 'beginner', label: 'Boshlang\'ich' },
+  { id: 'intermediate', label: 'O\'rta' },
+  { id: 'advanced', label: 'Yuqori' },
+  { id: 'speaking', label: 'Muloqot' },
+  { id: 'writing', label: 'Yozish' }
 ];
 
-const CourseCard = ({ course }) => (
-  <div className="bg-gray-800/50 rounded-2xl overflow-hidden hover:transform hover:scale-[1.02] transition-all duration-300">
-    <div className="h-48 overflow-hidden relative">
-      <div className="absolute inset-0 bg-gradient-to-t from-gray-900 to-transparent z-10"></div>
-      <img 
-        src={course.image || 'https://placehold.co/400x300/1a365d/ffffff?text=Course+Image'} 
-        alt={course.title}
-        className="w-full h-full object-cover"
-      />
-      <div className="absolute bottom-4 left-4 z-20">
-        <span className="px-3 py-1 bg-blue-500/90 backdrop-blur-sm rounded-full text-sm font-medium">
-          {course.category}
-        </span>
-      </div>
-    </div>
-    
-    <div className="p-6">
-      <h3 className="text-xl font-bold text-white mb-2">{course.title}</h3>
-      <p className="text-gray-400 text-sm mb-4">{course.description}</p>
-      
-      <div className="grid grid-cols-2 gap-4 mb-6">
-        <div className="flex items-center gap-2 text-gray-400">
-          <Clock size={16} />
-          <span className="text-sm">{course.duration}</span>
-        </div>
-        <div className="flex items-center gap-2 text-gray-400">
-          <Users size={16} />
-          <span className="text-sm">{course.students} o'quvchi</span>
-        </div>
-        <div className="flex items-center gap-2 text-gray-400">
-          <BookOpen size={16} />
-          <span className="text-sm">{course.level}</span>
-        </div>
-        <div className="flex items-center gap-2 text-yellow-500">
-          <Star size={16} className="fill-current" />
-          <span className="text-sm">{course.rating}</span>
-        </div>
-      </div>
+const CourseCard = ({ course }) => {
+  // Function to truncate description
+  const truncateDescription = (text, maxLength = 100) => {
+    if (text.length <= maxLength) return text;
+    return text.slice(0, maxLength) + '...';
+  };
 
-      <ul className="space-y-2 mb-6">
-        {course.features.map((feature, index) => (
-          <li key={index} className="flex items-center gap-2 text-gray-400 text-sm">
-            <Sparkles size={14} className="text-blue-500" />
-            {feature}
-          </li>
-        ))}
-      </ul>      <div className="flex items-center justify-between">
-        <div className="text-white">
-          <span className="text-sm text-gray-400">Oyiga</span>
-          <div className="text-xl font-bold">{course.price} so'm</div>
+  return (
+    <div className="bg-gray-800/50 rounded-2xl overflow-hidden hover:transform hover:scale-[1.02] transition-all duration-300">
+      <div className="h-48 overflow-hidden relative">
+        <div className="absolute inset-0 bg-gradient-to-t from-gray-900 to-transparent z-10"></div>
+        <img 
+          src={course.image || 'https://placehold.co/400x300/1a365d/ffffff?text=Course+Image'} 
+          alt={course.title}
+          className="w-full h-full object-cover"
+        />
+        <div className="absolute bottom-4 left-4 z-20">
+          <span className="px-3 py-1 bg-blue-500/90 backdrop-blur-sm rounded-full text-sm font-medium">
+            {categories.find(cat => cat.id === course.category)?.label || course.category}
+          </span>
         </div>
-        <Link 
-          to={`/courses/${course.id}`}
-          className="px-4 py-2 bg-blue-500 hover:bg-blue-600 rounded-full text-white font-medium transition-colors inline-flex items-center gap-2"
-        >
-          Batafsil
-          <ArrowRight size={16} />
-        </Link>
+      </div>
+      
+      <div className="p-6">
+        <h3 className="text-xl font-bold text-white mb-2">{course.title}</h3>
+        <p className="text-gray-400 text-sm mb-4 line-clamp-2">{truncateDescription(course.description)}</p>
+        
+        <div className="grid grid-cols-2 gap-4 mb-6">
+          <div className="flex items-center gap-2 text-gray-400">
+            <Clock size={16} />
+            <span className="text-sm">{course.duration}</span>
+          </div>
+          <div className="flex items-center gap-2 text-gray-400">
+            <Users size={16} />
+            <span className="text-sm">{course.studentsCount || 0} o'quvchi</span>
+          </div>
+          <div className="flex items-center gap-2 text-gray-400">
+            <BookOpen size={16} />
+            <span className="text-sm">{course.level}</span>
+          </div>
+          {course.rating && (
+            <div className="flex items-center gap-2 text-gray-400">
+              <Star size={16} className="text-yellow-500" />
+              <span className="text-sm">{course.rating.toFixed(1)}</span>
+            </div>
+          )}
+        </div>
+
+        {course.features?.length > 0 && (
+          <ul className="space-y-2 mb-6">
+            {course.features.slice(0, 2).map((feature, index) => (
+              <li key={index} className="flex items-center gap-2 text-gray-400 text-sm">
+                <Sparkles size={14} className="text-blue-500" />
+                {feature}
+              </li>
+            ))}
+          </ul>
+        )}
+
+        <div className="flex items-center justify-between">
+          <div className="text-white">
+            <span className="text-sm text-gray-400">Oyiga</span>
+            <div className="text-xl font-bold">{course.price?.toLocaleString()} so'm</div>
+          </div>          <Link 
+            to={`/courses/${course.id}`}
+            className="px-4 py-2 bg-blue-500 hover:bg-blue-600 rounded-full text-white font-medium transition-colors inline-flex items-center gap-2"
+          >
+            Batafsil
+            <ArrowRight size={16} />
+          </Link>
+        </div>
       </div>
     </div>
-  </div>
-);
+  );
+};
 
 export default function Courses() {
+  const [courses, setCourses] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
 
-  const categories = [
-    { id: 'all', label: 'Barchasi' },
-    { id: 'TOPIK', label: 'TOPIK' },
-    { id: 'General', label: 'Umumiy' },
-    { id: 'Speaking', label: 'Muloqot' }
-  ];
+  useEffect(() => {
+    fetchCourses();
+  }, []);
+
+  const fetchCourses = async () => {
+    try {
+      setLoading(true);
+      const response = await axios.get('/api/courses');
+      setCourses(response.data.filter(course => course.status === 'active'));
+    } catch (err) {
+      setError('Kurslarni yuklashda xatolik yuz berdi');
+      console.error('Error fetching courses:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const filteredCourses = courses.filter(course => {
     const matchesSearch = course.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -146,7 +138,7 @@ export default function Courses() {
       <div className="bg-gradient-to-b from-blue-600/10 to-transparent py-12">
         <div className="max-w-6xl mx-auto px-6 sm:px-12">
           <h1 className="text-4xl sm:text-5xl font-bold text-center mb-6">
-            <span className="text-blue-500">Bizning</span> kurslar
+            <span className="text-blue-500">Bizning</span> <span className='text-white'>kurslar</span> 
           </h1>
           <p className="text-gray-400 text-center max-w-2xl mx-auto text-lg">
             Professional koreys tili o'qituvchisidan sifatli va natijali kurslar

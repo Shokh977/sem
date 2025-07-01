@@ -21,6 +21,7 @@ import {
   Building2,
   BookOpenCheck
 } from 'lucide-react';
+import justItImage from '../../assets/justit.jpg';
 
 const ExperienceCard = ({ year, title, description }) => (
   <div className="relative pl-8 pb-12 group">
@@ -139,7 +140,7 @@ export default function About() {
             <div className="w-64 h-64 relative">
               <div className="absolute inset-0 bg-blue-500/20 rounded-full blur-2xl"></div>
               <img
-                src="/assets/justit.jpg" 
+                src={justItImage}
                 alt="Shoxrux Teacher"
                 className="w-full h-full object-cover rounded-full border-4 border-blue-500/50 relative z-10"
               />
@@ -178,10 +179,10 @@ export default function About() {
       <div className="py-16 bg-gradient-to-b from-transparent to-gray-800/50">
         <div className="max-w-6xl mx-auto px-6 sm:px-12">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-            <StatCard icon={Users} value="500+" label="O'quvchilar" />
-            <StatCard icon={Star} value="98%" label="Ijobiy natijalar" />
-            <StatCard icon={Clock} value="5+" label="Yillik tajriba" />
-            <StatCard icon={Globe2} value="50+" label="Online kurslar" />
+            <StatCard icon={Users} value="100+" label="O'quvchilar" />
+            <StatCard icon={Star} value="90%" label="Ijobiy natijalar" />
+            <StatCard icon={Clock} value="7+" label="Yillik tajriba" />
+            <StatCard icon={Globe2} value="10+" label="Online kurslar" />
           </div>
         </div>
       </div>
@@ -199,29 +200,29 @@ export default function About() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             <EducationCard 
               icon={School}
-              year="2018 - 2020"
-              degree="Master's degree in Korean Language Education"
-              school="Seoul National University"
-              location="Seoul, South Korea"
-              description="Koreys tilini o'qitish metodikasi va pedagogika yo'nalishi bo'yicha magistratura"
+              year="2018 - 2019"
+              degree="Koreys Tili va Madaniyati"
+              school="Chonnam National University"
+              location="Yeosu, South Korea"
+              description="Koreys tilini va Koreya madaniyatini o'rganish bo'yicha 1 yillik kurs"
             />
             
             <EducationCard 
               icon={GraduationCap}
-              year="2014 - 2018"
-              degree="Bachelor's in Korean Studies"
-              school="Tashkent State University of Oriental Studies"
-              location="Tashkent, Uzbekistan"
-              description="Sharqshunoslik fakulteti Koreys tili va adabiyoti yo'nalishi"
+              year="2019 - 2023"
+              degree="Bizines boshqaruv"
+              school="Chonnam National University"
+              location="Gwangju, South Korea"
+              description="Business va boshqaruv"
             />
             
             <EducationCard 
               icon={Award}
-              year="2016"
-              degree="Korean Language Program"
-              school="Kyung Hee University"
-              location="Seoul, South Korea"
-              description="Xalqaro almashenuv dasturi doirasida bir yillik malaka oshirish kursi"
+              year="2025 - ongoing"
+              degree="Xalqaro savdo va iqtisodiyot"
+              school="Kangwon National University"
+              location="Chuncheon, South Korea"
+              description="Xalqaro savdo va iqtisodiyot bo'yicha magistratura"
             />
           </div>
         </div>
@@ -237,17 +238,17 @@ export default function About() {
             <ExperienceCard 
               year="2020 - Hozir"
               title="TOPIK o'qituvchisi"
-              description="500+ o'quvchilarga TOPIK imtihoniga tayyorgarlik ko'rishda yordam berdim. O'quvchilarning 98% muvaffaqiyatli natija ko'rsatdi."
+              description="100+ o'quvchilarga TOPIK imtihoniga tayyorgarlik ko'rishda yordam berdim. O'quvchilarning 90% muvaffaqiyatli natija ko'rsatdi."
             />
             <ExperienceCard 
               year="2018 - 2020"
               title="Koreys tili o'qituvchisi"
-              description="Seul milliy universitetida o'qish davomida chet ellik talabalarga koreys tilini o'rgatish bo'yicha tajriba ortirdim."
+              description="Chonnam milliy universitetida o'qish davomida chet ellik talabalarga koreys tilini o'rgatish bo'yicha tajriba ortirdim."
             />
             <ExperienceCard 
-              year="2017"
-              title="TOPIK Level 6"
-              description="Koreys tili bilish darajasi bo'yicha eng yuqori natija (TOPIK 6) qo'lga kiritildi."
+              year="2022"
+              title="TOPIK Level 5"
+              description="Koreys tili bilish darajasi bo'yicha yuqori natija (TOPIK 5) qo'lga kiritildi."
             />
           </div>
         </div>
@@ -266,16 +267,7 @@ export default function About() {
                 <Globe2 className="text-blue-500" />
                 Til bilish darajasi
               </h3>
-              <div className="space-y-4">
-                <div>
-                  <div className="flex justify-between mb-1">
-                    <span>Koreys tili</span>
-                    <span className="text-blue-500">TOPIK 6</span>
-                  </div>
-                  <div className="h-2 bg-gray-700 rounded-full">
-                    <div className="h-full w-[98%] bg-blue-500 rounded-full"></div>
-                  </div>
-                </div>
+              <div className="space-y-4">  
                 <div>
                   <div className="flex justify-between mb-1">
                     <span>O'zbek tili</span>
@@ -285,8 +277,25 @@ export default function About() {
                     <div className="h-full w-full bg-blue-500 rounded-full"></div>
                   </div>
                 </div>
-                {/* Add more languages as needed */}
-              </div>
+                <div>
+                  <div className="flex justify-between mb-1">
+                    <span>Koreys tili</span>
+                    <span className="text-blue-500">TOPIK 5</span>
+                  </div>
+                  <div className="h-2 bg-gray-700 rounded-full">
+                    <div className="h-full w-[95%] bg-blue-500 rounded-full"></div>
+                  </div>
+                </div>
+                 <div>
+                  <div className="flex justify-between mb-1">
+                    <span>Ingliz tili</span>
+                    <span className="text-blue-500"> Upper Intermediate </span>
+                  </div>
+                  <div className="h-2 bg-gray-700 rounded-full">
+                    <div className="h-full w-[95%] bg-blue-500 rounded-full"></div>
+                  </div>
+                </div>
+                            </div>
             </div>
 
             {/* Teaching Skills */}
@@ -332,36 +341,36 @@ export default function About() {
             <SocialLink 
               icon={MessageCircle}
               label="TikTok"
-              username="@shoxrux_teacher"
-              link="https://tiktok.com/@shoxrux_teacher"
+              username="@shoxrux쌤"
+              link="https://www.tiktok.com/@shoxrux쌤?is_from_webapp=1&sender_device=pc"
               bgColor="bg-gradient-to-r from-pink-500 to-purple-600"
             />
             
             <SocialLink 
               icon={Send}
               label="Telegram"
-              username="shoxrux_korean"
-              link="https://t.me/shoxrux_korean"
+              username="shoxruxsem"
+              link="https://t.me/shoxruxsem"
               bgColor="bg-gradient-to-r from-blue-500 to-blue-600"
             />
             
             <SocialLink 
               icon={Instagram}
               label="Instagram"
-              username="@shoxrux_korean"
-              link="https://instagram.com/shoxrux_korean"
+              username="@shoxruxsem"
+              link="https://www.instagram.com/shoxruxsem?igsh=NHVsam5oM3F4NDM5"
               bgColor="bg-gradient-to-r from-pink-600 to-orange-500"
             />
             
             <SocialLink 
               icon={Youtube}
               label="YouTube"
-              username="Shoxrux Korean"
-              link="https://youtube.com/@shoxrux_korean"
+              username="Shoxrux 쌤"
+              link="www.youtube.com/@shoxrux쌤"
               bgColor="bg-gradient-to-r from-red-600 to-red-700"
             />
           </div>      {/* Community Stats */}
-      <div className="mt-16 grid grid-cols-2 sm:grid-cols-4 gap-6">
+      {/* <div className="mt-16 grid grid-cols-2 sm:grid-cols-4 gap-6">
             <div className="bg-gray-800/30 rounded-xl p-6 text-center">
               <div className="text-3xl font-bold text-blue-500 mb-1">50K+</div>
               <div className="text-gray-400">TikTok followers</div>
@@ -378,7 +387,7 @@ export default function About() {
               <div className="text-3xl font-bold text-blue-500 mb-1">10K+</div>
               <div className="text-gray-400">YouTube obunachi</div>
             </div>
-          </div>
+          </div> */}
         </div>
       </div>
     </div>
